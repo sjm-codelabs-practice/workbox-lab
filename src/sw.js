@@ -18,6 +18,54 @@ if (workbox) {
     })
   );
 
+  const articleHandler = workbox.strategies.networkFirst({
+    cacheName: 'articles-cache',
+    plugins: [
+      new workbox.expiration.Plugin({
+        maxEntries: 50,
+      })
+    ]
+  });
+
+  workbox.routing.registerRoute(/(.*)article(.*)\.html/, args => {
+    return articleHandler.handle(args).then(response => {
+      if (!response) {
+        return caches.match('pages/offline.html');
+      } else if (response.status === 404) {
+        return caches.match('pages/404.html');
+      }
+      return response;
+    });
+  });
+
+  const postHandler = workbox.strategies.cacheFirst({
+    cacheName: 'posts-cache',
+    plugins: [
+      new workbox.expiration.Plugin({
+        maxEntries: 50,
+      })
+    ]
+  });
+
+  workbox.routing.registerRoute(/(.*)post(.*)\.html/, args => {
+    return postHandler.handle(args)
+      .then(response => {
+        if (!response) {
+          // NOTE: this case shouldn't really happen, because
+          // in the event there is no response, an error is 
+          // thrown and will be caught in the catch case
+          return caches.match('pages/offline.html');
+        } else if (response.status === 404) {
+          return caches.match('pages/404.html');
+        }
+        return response;
+      })
+      .catch(err => {
+        console.log(err);
+        return caches.match('pages/offline.html');
+      });
+  });
+
   workbox.routing.registerRoute(
     new RegExp(`/images/icon/*`),
     workbox.strategies.staleWhileRevalidate({
