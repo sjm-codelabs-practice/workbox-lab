@@ -38,7 +38,7 @@ gulp.task('build', build);
 // Build the app, run a local dev server, and rebuild on "src" file changes
 const browserSyncOptions = {
   server: 'build',
-  port: 8081,
+  port: 3000,
   open: false
 };
 const serve = gulp.series(build, () => {
